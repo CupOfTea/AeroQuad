@@ -36,11 +36,9 @@ void readPilotCommands() {
   readReceiver(); 
   if (receiverCommand[THROTTLE] < MINCHECK) {
     zeroIntegralError();
-
     // Disarm motors (left stick lower left corner)
     if (receiverCommand[ZAXIS] < MINCHECK && motorArmed == ON) {
       commandAllMotors(MINCOMMAND);
-      digitalWrite(LED_Red,LOW);
       motorArmed = OFF;
             
       #ifdef OSD
@@ -66,17 +64,24 @@ void readPilotCommands() {
     
     // Arm motors (left stick lower right corner)
     if (receiverCommand[ZAXIS] > MAXCHECK && motorArmed == OFF && safetyCheck == ON) {
+      #if defined (UseGPS) 
+        if (!isHomeBaseInitialized()) {  // if GPS, wait for home position fix!
+          return;
+        }
+      #endif 
+
       zeroIntegralError();
-      commandAllMotors(MINTHROTTLE);
-      digitalWrite(LED_Red,HIGH);
+      for (byte motor = 0; motor < LASTMOTOR; motor++) {
+        motorCommand[motor] = MINTHROTTLE;
+      }
       motorArmed = ON;
     
       #ifdef OSD
         notifyOSD(OSD_CENTER|OSD_WARN, "!MOTORS ARMED!");
       #endif  
-        
+      
+      
     }
-
     // Prevents accidental arming of motor output if no transmitter command received
     if (receiverCommand[ZAXIS] > MINCHECK) {
       safetyCheck = ON; 
@@ -91,13 +96,16 @@ void readPilotCommands() {
   
   #ifdef RateModeOnly
     flightMode = RATE_FLIGHT_MODE;
+    digitalWrite(LED_Yellow, LOW);
   #else
     // Check Mode switch for Acro or Stable
     if (receiverCommand[MODE] > 1500) {
       flightMode = ATTITUDE_FLIGHT_MODE;
+      digitalWrite(LED_Yellow, HIGH);
    }
     else {
       flightMode = RATE_FLIGHT_MODE;
+      digitalWrite(LED_Yellow, LOW);
     }
   #endif  
   
@@ -106,6 +114,7 @@ void readPilotCommands() {
      if (altitudeHoldState != ALTPANIC ) {  // check for special condition with manditory override of Altitude hold
        if (isStoreAltitudeNeeded) {
          altitudeToHoldTarget = getAltitudeFromSensors();
+         previousSensorAltitude = altitudeToHoldTarget;
          altitudeHoldThrottle = receiverCommand[THROTTLE];
          PID[ALTITUDE_HOLD_PID_IDX].integratedError = 0;
          PID[ALTITUDE_HOLD_PID_IDX].lastPosition = altitudeToHoldTarget;  // add to initialize hold position on switch turn on.
@@ -113,7 +122,6 @@ void readPilotCommands() {
        }
        altitudeHoldState = ON;
      }
-     // note, Panic will stay set until Althold is toggled off/on
    } 
    else {
      isStoreAltitudeNeeded = true;

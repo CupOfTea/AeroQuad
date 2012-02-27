@@ -27,13 +27,12 @@
 
 #include "BatteryMonitorTypes.h"
 
-byte    osdBatCounter = 0;
+byte    osdBatNo = 0;
 boolean descentWarningShown = false;
 
 void displayVoltage(byte areMotorsArmed) {
 
-  byte    osdBatNo     = osdBatCounter % numberOfBatteries;
-  boolean osdBatMinMax = osdBatCounter / numberOfBatteries / 4;
+  int currentValue = batteryData[osdBatNo].voltage/10;
 
   // don't show min/max when armed or we have not flown yet
   if ((areMotorsArmed == true) || (armedTime == 0)){
@@ -49,7 +48,7 @@ void displayVoltage(byte areMotorsArmed) {
   }
 
   char buf[12];
-  snprintf(buf,7,"%c%2d.%1dV",(osdBatMinMax) ? '\23' : '\20', currentValue/10,currentValue%10);
+  snprintf(buf,7,"%c%2d.%1dV",'\20', currentValue/10,currentValue%10);
 
   // Following blink only symbol on warning and all on alarm
   writeChars( buf,   1, batteryIsWarning(osdBatNo)?1:0, VOLTAGE_ROW + osdBatNo, VOLTAGE_COL );
@@ -74,10 +73,7 @@ void displayVoltage(byte areMotorsArmed) {
     writeChars( buf, 11, 0, VOLTAGE_ROW+osdBatNo, VOLTAGE_COL+6 );
   }
 
-  osdBatCounter++;
-  if (osdBatCounter >= numberOfBatteries * 8) {
-    osdBatCounter = 0;
-  }
+  osdBatNo = (osdBatNo + 1) % numberOfBatteries;
 
   #if defined (BattMonitorAutoDescent)
     if (batteryAlarm && areMotorsArmed) {

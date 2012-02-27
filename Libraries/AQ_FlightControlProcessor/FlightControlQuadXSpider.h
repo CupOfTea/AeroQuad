@@ -1,7 +1,7 @@
 /*
-  AeroQuad v3.0.1 - February 2012
+  AeroQuad v3.0 - April 2011
   www.AeroQuad.com
-  Copyright (c) 2012 Ted Carancho.  All rights reserved.
+  Copyright (c) 2011 Ted Carancho.  All rights reserved.
   An Open Source Arduino based multicopter.
  
   This program is free software: you can redistribute it and/or modify 
@@ -18,8 +18,8 @@
   along with this program. If not, see <http://www.gnu.org/licenses/>. 
 */
 
-#ifndef _AQ_PROCESS_FLIGHT_CONTROL_X_MODE_H_
-#define _AQ_PROCESS_FLIGHT_CONTROL_X_MODE_H_
+#ifndef _AQ_PROCESS_FLIGHT_CONTROL_X_SPIDER_MODE_H_
+#define _AQ_PROCESS_FLIGHT_CONTROL_X_SPIDER_MODE_H_
 
 /*
        CW  0....Front....0 CCW
@@ -49,8 +49,8 @@ int motorMinCommand[4] = {0,0,0,0};
 int motorConfiguratorCommand[4] = {0,0,0,0};
 
 void applyMotorCommand() {
-  motorCommand[FRONT_LEFT]  = throttle - motorAxisCommandPitch + motorAxisCommandRoll - (YAW_DIRECTION * motorAxisCommandYaw);
-  motorCommand[FRONT_RIGHT] = throttle - motorAxisCommandPitch - motorAxisCommandRoll + (YAW_DIRECTION * motorAxisCommandYaw);
+  motorCommand[FRONT_LEFT]  = throttle - motorAxisCommandPitch + motorAxisCommandRoll - (YAW_DIRECTION * motorAxisCommandYaw * 0.8);
+  motorCommand[FRONT_RIGHT] = throttle - motorAxisCommandPitch - motorAxisCommandRoll + (YAW_DIRECTION * motorAxisCommandYaw * 0.8);
   motorCommand[REAR_LEFT]   = throttle + motorAxisCommandPitch + motorAxisCommandRoll + (YAW_DIRECTION * motorAxisCommandYaw);
   motorCommand[REAR_RIGHT]  = throttle + motorAxisCommandPitch - motorAxisCommandRoll - (YAW_DIRECTION * motorAxisCommandYaw);
 }

@@ -36,11 +36,18 @@
  */
 void calculateFlightError()
 {
+//  #if defined AltitudeHoldBaro || defined AltitudeHoldRangeFinder
+//    if (altitudeHoldState == ON) {
+//      motorAxisCommandRoll = (getReceiverSIData(XAXIS) - estimatedXVelocity) * 25;
+//      motorAxisCommandPitch = (getReceiverSIData(YAXIS) + estimatedYVelocity) * 25;
+//    }
+//    else
+//  #endif  
   if (flightMode == ATTITUDE_FLIGHT_MODE) {
     float rollAttitudeCmd  = updatePID((receiverCommand[XAXIS] - receiverZero[XAXIS]) * ATTITUDE_SCALING, kinematicsAngle[XAXIS], &PID[ATTITUDE_XAXIS_PID_IDX]);
     float pitchAttitudeCmd = updatePID((receiverCommand[YAXIS] - receiverZero[YAXIS]) * ATTITUDE_SCALING, -kinematicsAngle[YAXIS], &PID[ATTITUDE_YAXIS_PID_IDX]);
-    motorAxisCommandRoll   = updatePID(rollAttitudeCmd, gyroRate[XAXIS]*1.2, &PID[ATTITUDE_GYRO_XAXIS_PID_IDX]);
-    motorAxisCommandPitch  = updatePID(pitchAttitudeCmd, -gyroRate[YAXIS]*1.2, &PID[ATTITUDE_GYRO_YAXIS_PID_IDX]);
+    motorAxisCommandRoll   = updatePID(rollAttitudeCmd, gyroRate[XAXIS], &PID[ATTITUDE_GYRO_XAXIS_PID_IDX]);
+    motorAxisCommandPitch  = updatePID(pitchAttitudeCmd, -gyroRate[YAXIS], &PID[ATTITUDE_GYRO_YAXIS_PID_IDX]);
   }
   else {
     motorAxisCommandRoll = updatePID(getReceiverSIData(XAXIS), gyroRate[XAXIS]*0.8, &PID[RATE_XAXIS_PID_IDX]);
@@ -178,7 +185,7 @@ void processHardManuevers() {
  */
 void processMinMaxCommand()
 {
-  /*for (byte motor = 0; motor < LASTMOTOR; motor++)
+  for (byte motor = 0; motor < LASTMOTOR; motor++)
   {
     motorMinCommand[motor] = minArmedThrottle;
     motorMaxCommand[motor] = MAXCOMMAND;
@@ -195,47 +202,6 @@ void processMinMaxCommand()
   for (byte motor = 0; motor < LASTMOTOR; motor++) {
     if (maxMotor > MAXCOMMAND) {
       motorCommand[motor] =  motorCommand[motor] - (maxMotor - MAXCOMMAND);
-    }
-  }*/
-  
-  // Force motors to be equally distant from throttle value for balanced motor output during hard yaw
-  byte motorMaxCheck = OFF;
-  byte motorMinCheck = OFF;
-
-  // Check if everything within motor limits
-  for (byte motor = 0; motor < LASTMOTOR; motor++) {
-    motorMaxCheck = motorMaxCheck | (motorCommand[motor] >= MAXCOMMAND);
-    motorMinCheck = motorMinCheck | (motorCommand[motor] <= minArmedThrottle);
-  }
-
-  // If everything within limits, turn flags off and reset max/mins to default
-  if (!motorMaxCheck) {
-    if (maxLimit) { // only reset if flag was on
-      for (byte motor = 0; motor < LASTMOTOR; motor++)
-        motorMinCommand[motor] = minArmedThrottle;
-      maxLimit = OFF;
-    }
-  }
-  if (!motorMinCheck) {
-    if (minLimit) { // only reset if flag was on
-      for (byte motor = 0; motor < LASTMOTOR; motor++)
-        motorMaxCommand[motor] = MAXCOMMAND;
-      minLimit = OFF;
-    }
-  }
-
-  // If any limits reached, freeze current min/max values and turn limit flag on
-  // In future iterations, if limit still exceeded again, use only first frozen values
-  for (byte motor = 0; motor < LASTMOTOR; motor++) {
-    if ((motorCommand[motor] >= MAXCOMMAND) && maxLimit == OFF) {
-      for (byte motorLimit = 0; motorLimit < LASTMOTOR; motorLimit++)
-        motorMinCommand[motorLimit] = motorCommand[motorLimit];
-      maxLimit = ON;
-    }
-    if ((motorCommand[motor] <= minArmedThrottle) && minLimit == OFF) {
-      for (byte motorLimit = 0; motorLimit < LASTMOTOR; motorLimit++)
-        motorMaxCommand[motorLimit] = motorCommand[motorLimit];
-      minLimit = ON;
     }
   }
 }
@@ -272,12 +238,10 @@ void processFlightControl() {
   // *********************** process min max motor command *******************
   processMinMaxCommand();
 
-  // Allows quad to do acrobatics by lowering power to opposite motors during hard manuevers
-  //processHardManuevers();    
-  
   // If throttle in minimum position, don't apply yaw
   if (receiverCommand[THROTTLE] < MINCHECK) {
     for (byte motor = 0; motor < LASTMOTOR; motor++) {
+      motorMinCommand[motor] = minArmedThrottle;
       motorMaxCommand[motor] = minArmedThrottle;
     }
   }

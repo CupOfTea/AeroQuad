@@ -28,6 +28,7 @@
 byte    numberOfBatteries = 0; 
 boolean batteryAlarm      = false;
 boolean batteryWarning    = false;
+byte    buzzerState       = 0;
 
 unsigned short batteryAlarmCellVoltage   = 333; // 9.9V on 3S
 unsigned short batteryWarningCellVoltage = 366; // 11.0V on 3S

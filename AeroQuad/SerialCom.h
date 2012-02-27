@@ -531,7 +531,7 @@ void sendSerialTelemetry() {
       PrintValueComma(0); // zero out unused motor channels
     }
     #ifdef BattMonitor
-      PrintValueComma(batteryData[0].voltage/100.0);
+      PrintValueComma((float)batteryData[0].voltage/100.0); // voltage internally stored at 10mV:s
     #else
       PrintValueComma(0);
     #endif
@@ -759,6 +759,8 @@ void reportVehicleState() {
     SERIAL_PRINTLN("Quad X");
   #elif defined (quadY4Config)
     SERIAL_PRINTLN("Quad Y4");
+  #elif defined(quadXSpiderConfig) 
+    SERIAL_PRINTLN("Quad X Spider");
   #elif defined (triConfig)
     SERIAL_PRINTLN("Tri");
   #elif defined(hexPlusConfig)
